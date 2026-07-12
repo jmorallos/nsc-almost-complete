@@ -1,4 +1,4 @@
-import { getEmployeeById, addDocument, deleteDocument, addSampleDocuments } from '../store/employees.js';
+import { getEmployeeById, addDocument, deleteDocument, addSampleDocuments, refreshEmployee } from '../store/employees.js';
 import { getEl, setHTML, getFileType, formatFileSize, getToday, getSourceTag } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { refreshPanelHeader } from './profilePanel.js';
@@ -49,33 +49,45 @@ export function renderTabDocs(emp) {
         btn.addEventListener('click', () => handlePrintDoc(btn.dataset.docName, btn.dataset.empName));
     });
     document.querySelectorAll('.dbtn-del').forEach(btn => {
-        btn.addEventListener('click', () => handleDeleteDoc(emp.id, Number(btn.dataset.docId)));
+        btn.addEventListener('click', () => handleDeleteDoc(emp.id, btn.dataset.docId));
     });
 }
 
 function handleDocUpload(input, empId) {
     const file = input.files[0];
     if (!file) return;
-    addDocument(empId, { name: file.name, type: getFileType(file.name), size: formatFileSize(file.size), date: getToday(), source: 'upload' });
-    showToast(`"${file.name}" added.`, 'success');
-    input.value = '';
-    renderTabDocs(getEmployeeById(empId));
-    refreshPanelHeader();
+    addDocument(empId, { name: file.name, type: getFileType(file.name), size: formatFileSize(file.size), date: getToday(), source: 'upload' })
+        .then(async () => {
+            showToast(`"${file.name}" added.`, 'success');
+            input.value = '';
+            const emp = await refreshEmployee(empId);
+            renderTabDocs(emp);
+            refreshPanelHeader();
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }
 
 function handleAddSampleDocs(empId) {
-    const added = addSampleDocuments(empId);
-    showToast(added ? `${added} sample file(s) added.` : 'All sample files already exist.', added ? 'success' : 'info');
-    renderTabDocs(getEmployeeById(empId));
-    refreshPanelHeader();
+    addSampleDocuments(empId)
+        .then(async (added) => {
+            showToast(added ? `${added} sample file(s) added.` : 'All sample files already exist.', added ? 'success' : 'info');
+            const emp = await refreshEmployee(empId);
+            renderTabDocs(emp);
+            refreshPanelHeader();
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }
 
 function handleDeleteDoc(empId, docId) {
     if (!confirm('Remove this document?')) return;
-    deleteDocument(empId, docId);
-    showToast('Document removed.', 'success');
-    renderTabDocs(getEmployeeById(empId));
-    refreshPanelHeader();
+    deleteDocument(empId, docId)
+        .then(async () => {
+            showToast('Document removed.', 'success');
+            const emp = await refreshEmployee(empId);
+            renderTabDocs(emp);
+            refreshPanelHeader();
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }
 
 function handlePrintDoc(docName, empName) {

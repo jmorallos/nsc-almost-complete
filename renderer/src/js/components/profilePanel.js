@@ -1,4 +1,4 @@
-import { getEmployeeById, deleteEmployee } from '../store/employees.js';
+import { refreshEmployee, deleteEmployee } from '../store/employees.js';
 import { getEl, setHTML, getInitials, getStatusBadge, getYearsOfService } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { renderEmployeeTable } from './employeeTable.js';
@@ -17,8 +17,8 @@ export function initProfilePanel(getSearchQuery) {
     });
 }
 
-export function openProfilePanel(empId) {
-    const emp = getEmployeeById(empId);
+export async function openProfilePanel(empId) {
+    const emp = await refreshEmployee(empId);
     if (!emp) return;
     _panelEmpId = empId;
     renderPanelHeader(emp);
@@ -34,9 +34,9 @@ export function closeProfilePanel() {
     _panelEmpId = null;
 }
 
-export function refreshPanelHeader() {
+export async function refreshPanelHeader() {
     if (_panelEmpId === null) return;
-    const emp = getEmployeeById(_panelEmpId);
+    const emp = await refreshEmployee(_panelEmpId);
     if (emp) renderPanelHeader(emp);
 }
 
@@ -46,11 +46,12 @@ function switchTab(tabName, buttonEl) {
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     getEl('tab-' + tabName).classList.add('active');
     if (_panelEmpId === null) return;
-    const emp = getEmployeeById(_panelEmpId);
-    if (!emp) return;
-    if (tabName === 'info') renderTabInfo(emp);
-    if (tabName === 'employment') renderTabEmployment(emp);
-    if (tabName === 'docs') renderTabDocs(emp);
+    refreshEmployee(_panelEmpId).then((emp) => {
+        if (!emp) return;
+        if (tabName === 'info') renderTabInfo(emp);
+        if (tabName === 'employment') renderTabEmployment(emp);
+        if (tabName === 'docs') renderTabDocs(emp);
+    });
 }
 
 function renderTabInfo(emp) {
@@ -112,8 +113,9 @@ function activateTab(name) {
 
 function handleDeleteEmployee(empId) {
     if (!confirm('Delete this employee? This cannot be undone.')) return;
-    deleteEmployee(empId);
-    closeProfilePanel();
-    renderEmployeeTable(_getSearchQuery());
-    showToast('Employee deleted.', 'success');
+    deleteEmployee(empId).then(() => {
+        closeProfilePanel();
+        renderEmployeeTable(_getSearchQuery());
+        showToast('Employee deleted.', 'success');
+    }).catch((err) => showToast(err.message, 'error'));
 }

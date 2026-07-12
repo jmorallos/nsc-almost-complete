@@ -1,27 +1,39 @@
-import {app, BrowserWindow} from "electron";
+import { app, BrowserWindow } from 'electron';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { initDatabase } from './src/database/db.js';
+import { registerAllIpc } from './src/ipc/index.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+let mainWindow = null;
 
 const createWindow = () => {
-    const win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1000,
         height: 800,
         minHeight: 800,
         minWidth: 600,
-        titleBarStyle: "hidden",
-        ...(process.platform !== 'darwin' ? { titleBarOverlay: true} : {}),
+        titleBarStyle: 'hidden',
+        ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
         titleBarOverlay: {
-            color: "#062b6e",
+            color: '#062b6e',
         },
-        
         frame: false,
         webPreferences: {
-            nodeIntegration: false
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.cjs'),
         },
-    })
+    });
 
-    win.loadURL("http://localhost:5173/");
-}
+    const devUrl = process.env.VITE_DEV_SERVER_URL ?? 'http://localhost:5173/';
+    mainWindow.loadURL(devUrl);
+};
 
 app.whenReady().then(() => {
+    initDatabase(app.getPath('userData'));
+    registerAllIpc();
     createWindow();
 
     app.on('activate', () => {
@@ -31,9 +43,8 @@ app.whenReady().then(() => {
     });
 });
 
-
 app.on('window-all-closed', () => {
-    if (process.platform  !== 'darwin') {
+    if (process.platform !== 'darwin') {
         app.quit();
     }
 });

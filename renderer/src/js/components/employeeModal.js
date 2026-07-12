@@ -60,16 +60,16 @@ function saveEmployee() {
         start_date: getEl('f-start').value,
         picture: _tempPhoto ?? (getEmployeeById(_editingEmpId)?.picture ?? null),
     };
-    if (_editingEmpId) {
-        updateEmployee(_editingEmpId, data);
-        showToast('Employee updated.', 'success');
-    } else {
-        addEmployee(data);
-        showToast('Employee added.', 'success');
-    }
-    closeEmployeeModal();
-    renderEmployeeTable(_getSearchQuery());
-    populateDeptDropdowns();
+    const action = _editingEmpId
+        ? updateEmployee(_editingEmpId, data)
+        : addEmployee(data);
+
+    action.then(() => {
+        showToast(_editingEmpId ? 'Employee updated.' : 'Employee added.', 'success');
+        closeEmployeeModal();
+        renderEmployeeTable(_getSearchQuery());
+        populateDeptDropdowns();
+    }).catch((err) => showToast(err.message, 'error'));
 }
 
 function prefillForm(emp) {

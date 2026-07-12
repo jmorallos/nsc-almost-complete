@@ -43,12 +43,20 @@ const App = {
 };
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize stores
-    initUsers();
-    initEmployees();
-    initDepartments();
-    initBackups();
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Initialize stores from SQLite via IPC
+    try {
+        await Promise.all([
+            initUsers(),
+            initEmployees(),
+            initDepartments(),
+        ]);
+        initBackups();
+    } catch (err) {
+        console.error('Failed to load data:', err);
+        alert('Failed to connect to the database. Please restart the application.');
+        return;
+    }
 
     // 2. Load saved preferences
     App.loadPrefs();

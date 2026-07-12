@@ -49,20 +49,22 @@ function handleSetFont(size, btnEl) {
 }
 
 function renderUserTable() {
-    setHTML('user-table', `
+    getAllUsers().then((users) => {
+        setHTML('user-table', `
     <tr><th>Name</th><th>Username</th><th>Role</th><th></th></tr>
-    ${getAllUsers().map(u => `
+    ${users.map(u => `
       <tr>
         <td>${u.name}</td>
         <td><code style="background:var(--bg-base);padding:2px 8px;border-radius:6px;font-size:12px;font-family:'DM Mono',monospace;">${u.username}</code></td>
         <td><span class="badge active" style="font-size:10px;">${u.role}</span></td>
-        <td>${u.id !== 1
+        <td>${u.username !== 'admin'
             ? `<button class="btn btn-sm btn-del" data-delete-user="${u.id}">Remove</button>`
             : `<span style="font-size:11px;color:var(--text-3);">Protected</span>`}</td>
       </tr>`).join('')}`);
 
-    document.querySelectorAll('[data-delete-user]').forEach(btn => {
-        btn.addEventListener('click', () => handleDeleteUser(Number(btn.dataset.deleteUser)));
+        document.querySelectorAll('[data-delete-user]').forEach(btn => {
+            btn.addEventListener('click', () => handleDeleteUser(btn.dataset.deleteUser));
+        });
     });
 }
 
@@ -87,25 +89,23 @@ function handleSaveUser() {
     const role = getEl('u-role').value;
     if (!name || !username || !password) { showToast('All fields are required.', 'error'); return; }
     if (password.length < 4) { showToast('Password must be at least 4 characters.', 'error'); return; }
-    try {
-        addUser({ name, username, password, role });
-        closeAddUserModal();
-        renderUserTable();
-        showToast(`User "${username}" created.`, 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+    addUser({ name, username, password, role })
+        .then(() => {
+            closeAddUserModal();
+            renderUserTable();
+            showToast(`User "${username}" created.`, 'success');
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }
 
 function handleDeleteUser(userId) {
     if (!confirm('Remove this user account?')) return;
-    try {
-        deleteUser(userId);
-        renderUserTable();
-        showToast('User removed.', 'success');
-    } catch (err) {
-        showToast(err.message, 'error');
-    }
+    deleteUser(userId)
+        .then(() => {
+            renderUserTable();
+            showToast('User removed.', 'success');
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }
 
 function refreshStats() {

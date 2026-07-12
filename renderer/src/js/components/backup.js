@@ -30,10 +30,10 @@ export function renderBackupPage() {
         : '<p style="font-size:12px;color:var(--text-3);text-align:center;padding:16px 0;">No backups yet.</p>');
 
     document.querySelectorAll('[data-download-backup]').forEach(btn => {
-        btn.addEventListener('click', () => handleDownloadBackup(Number(btn.dataset.downloadBackup)));
+        btn.addEventListener('click', () => handleDownloadBackup(btn.dataset.downloadBackup));
     });
     document.querySelectorAll('[data-delete-backup]').forEach(btn => {
-        btn.addEventListener('click', () => handleDeleteBackup(Number(btn.dataset.deleteBackup)));
+        btn.addEventListener('click', () => handleDeleteBackup(btn.dataset.deleteBackup));
     });
 }
 
@@ -74,11 +74,14 @@ function handleRestoreBackup(input) {
     reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            replaceAll(data.employees ?? []);
-            if (data.departments) replaceDepts(data.departments);
-            renderEmployeeTable(_getSearchQuery());
-            populateDeptDropdowns();
-            showToast('Data restored successfully.', 'success');
+            Promise.all([
+                replaceAll(data.employees ?? []),
+                data.departments ? replaceDepts(data.departments) : Promise.resolve(),
+            ]).then(() => {
+                renderEmployeeTable(_getSearchQuery());
+                populateDeptDropdowns();
+                showToast('Data restored successfully.', 'success');
+            }).catch(() => showToast('Restore failed.', 'error'));
         } catch {
             showToast('Invalid backup file.', 'error');
         }

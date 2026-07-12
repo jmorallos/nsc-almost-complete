@@ -41,10 +41,10 @@ export function renderDepartmentPage() {
     }).join(''));
 
     document.querySelectorAll('[data-edit-dept]').forEach(btn => {
-        btn.addEventListener('click', () => openDeptModal(Number(btn.dataset.editDept)));
+        btn.addEventListener('click', () => openDeptModal(btn.dataset.editDept));
     });
     document.querySelectorAll('[data-delete-dept]').forEach(btn => {
-        btn.addEventListener('click', () => handleDeleteDept(Number(btn.dataset.deleteDept)));
+        btn.addEventListener('click', () => handleDeleteDept(btn.dataset.deleteDept));
     });
 }
 
@@ -70,16 +70,16 @@ function saveDept() {
     const name = getEl('d-name').value.trim();
     if (!name) { showToast('Department name is required.', 'error'); return; }
     const data = { name, description: getEl('d-desc').value.trim() };
-    if (_editingDeptId) {
-        updateDepartment(_editingDeptId, data);
-        showToast('Department updated.', 'success');
-    } else {
-        addDepartment(data);
-        showToast('Department added.', 'success');
-    }
-    closeDeptModal();
-    renderDepartmentPage();
-    populateDeptDropdowns();
+    const action = _editingDeptId
+        ? updateDepartment(_editingDeptId, data)
+        : addDepartment(data);
+
+    action.then(() => {
+        showToast(_editingDeptId ? 'Department updated.' : 'Department added.', 'success');
+        closeDeptModal();
+        renderDepartmentPage();
+        populateDeptDropdowns();
+    }).catch((err) => showToast(err.message, 'error'));
 }
 
 function handleDeleteDept(deptId) {
@@ -87,8 +87,11 @@ function handleDeleteDept(deptId) {
     const inUse = getAllEmployees().some(e => e.dept === dept?.name);
     if (inUse) { showToast('Cannot delete: department still has employees.', 'error'); return; }
     if (!confirm(`Delete department "${dept?.name}"?`)) return;
-    deleteDepartment(deptId);
-    renderDepartmentPage();
-    populateDeptDropdowns();
-    showToast('Department deleted.', 'success');
+    deleteDepartment(deptId)
+        .then(() => {
+            renderDepartmentPage();
+            populateDeptDropdowns();
+            showToast('Department deleted.', 'success');
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }

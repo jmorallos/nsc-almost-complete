@@ -1,4 +1,4 @@
-import { getEmployeeById, addDocument } from '../store/employees.js';
+import { refreshEmployee, addDocument } from '../store/employees.js';
 import { getEl, setHTML, getToday } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { renderTabDocs } from './documents.js';
@@ -101,9 +101,12 @@ function onScanComplete(device, format, docType) {
     const time = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }).replace(':', '-');
     const filename = `SCANNED - ${docType} ${time}.${ext}`;
     const size = (Math.random() * 2 + 0.5).toFixed(1) + ' MB';
-    addDocument(_scanEmpId, { name: filename, type: 'scan', size, date: getToday(), source: 'scan' });
-    closeScanModal();
-    showToast(`Document scanned via ${device.name}.`, 'success');
-    const emp = getEmployeeById(_scanEmpId);
-    if (emp) { renderTabDocs(emp); refreshPanelHeader(); }
+    addDocument(_scanEmpId, { name: filename, type: 'scan', size, date: getToday(), source: 'scan' })
+        .then(async () => {
+            closeScanModal();
+            showToast(`Document scanned via ${device.name}.`, 'success');
+            const emp = await refreshEmployee(_scanEmpId);
+            if (emp) { renderTabDocs(emp); refreshPanelHeader(); }
+        })
+        .catch((err) => showToast(err.message, 'error'));
 }
