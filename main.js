@@ -27,14 +27,15 @@ const createWindow = () => {
         },
     });
 
-    const devUrl = process.env.VITE_DEV_SERVER_URL ?? 'http://localhost:5173/';
-    mainWindow.loadURL(devUrl);
+    // const devUrl = process.env.VITE_DEV_SERVER_URL ?? 'http://localhost:5173/';
+    mainWindow.loadFile('./renderer/index.html');
 };
 
 app.whenReady().then(() => {
-    initDatabase(app.getPath('userData'));
+    initDatabase(path.join(__dirname, "Database"));
     registerAllIpc();
     createWindow();
+
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
