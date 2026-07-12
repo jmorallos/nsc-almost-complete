@@ -14,12 +14,12 @@ const createWindow = () => {
         height: 800,
         minHeight: 800,
         minWidth: 600,
-        // titleBarStyle: 'hidden',
-        // ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
-        // titleBarOverlay: {
-        //     color: '#062b6e',
-        // },
-        // frame: false,
+        titleBarStyle: 'hidden',
+        ...(process.platform !== 'darwin' ? { titleBarOverlay: true } : {}),
+        titleBarOverlay: {
+            color: '#062b6e',
+        },
+        frame: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
